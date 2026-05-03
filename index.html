@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Funnel Analysis · Vishnu C</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F5F0E8;
+  --surface:#FFFFFF;
+  --surface2:#EDE8DF;
+  --border:rgba(0,0,0,0.08);
+  --border2:rgba(0,0,0,0.14);
+  --text:#1A1814;
+  --muted:#7A7060;
+  --accent:#C85A00;
+  --accent2:#8A6A3E;
+  --accent3:#B34200;
+  --accent-dim:rgba(200,90,0,0.08);
+  --accent2-dim:rgba(138,106,62,0.08);
+  --accent3-dim:rgba(179,66,0,0.08);
+}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh}
+
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:1rem 3rem;
+  background:rgba(245,240,232,0.92);
+  backdrop-filter:blur(16px);
+  border-bottom:0.5px solid var(--border);
+}
+.nav-logo{font-family:'DM Mono',monospace;font-size:13px;color:var(--accent);letter-spacing:0.05em;text-decoration:none}
+.nav-links{display:flex;gap:2rem;list-style:none}
+.nav-links a{font-size:13px;color:var(--muted);text-decoration:none;letter-spacing:0.02em;transition:color 0.2s}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{font-family:'DM Mono',monospace;font-size:12px;padding:6px 18px;background:transparent;border:0.5px solid var(--accent);color:var(--accent);border-radius:5px;cursor:pointer;text-decoration:none;transition:background 0.2s}
+.nav-cta:hover{background:var(--accent-dim)}
+
+.hero{padding:140px 3rem 90px;max-width:960px;margin:0 auto}
+.hero-tag{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.15em;color:var(--accent);text-transform:uppercase;margin-bottom:1.5rem;display:flex;align-items:center;gap:10px}
+.hero-tag::before{content:'';display:block;width:28px;height:0.5px;background:var(--accent)}
+h1{font-family:'Syne',sans-serif;font-size:clamp(2.6rem,5.5vw,4.2rem);font-weight:800;line-height:1.06;letter-spacing:-0.025em;margin-bottom:1.5rem}
+h1 em{color:var(--accent);font-style:normal}
+.hero-sub{font-size:17px;color:var(--muted);max-width:580px;line-height:1.75;margin-bottom:2.5rem}
+.hero-meta{display:flex;gap:2.5rem;flex-wrap:wrap;padding-top:2rem;border-top:0.5px solid var(--border)}
+.meta-item{display:flex;flex-direction:column;gap:3px}
+.meta-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.12em;color:var(--muted);text-transform:uppercase}
+.meta-value{font-size:14px;color:var(--text)}
+
+section{max-width:960px;margin:0 auto;padding:0 3rem 90px}
+.sec-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.15em;color:var(--muted);text-transform:uppercase;margin-bottom:2.5rem;display:flex;align-items:center;gap:14px}
+.sec-label::after{content:'';flex:1;height:0.5px;background:var(--border)}
+h2{font-family:'Syne',sans-serif;font-size:1.7rem;font-weight:700;margin-bottom:1.5rem;letter-spacing:-0.01em}
+
+.callout{background:var(--surface);border:0.5px solid var(--border2);border-left:2px solid var(--accent3);border-radius:0 8px 8px 0;padding:1.1rem 1.5rem;margin-bottom:1rem;font-size:14px;color:var(--muted);line-height:1.65}
+.callout strong{color:var(--text)}
+.callout.good{border-left-color:var(--accent)}
+.callout.info{border-left-color:var(--accent2)}
+
+/* SKILLS */
+.skills-section{display:flex;flex-direction:column;gap:2rem}
+.skill-group-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.12em;color:var(--muted);text-transform:uppercase;margin-bottom:1rem}
+.skills-wrap{display:flex;flex-wrap:wrap;gap:10px}
+.skill-tag{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:6px;font-size:13px;border:0.5px solid;cursor:default;transition:opacity 0.2s}
+.skill-tag:hover{opacity:0.8}
+.skill-tag.teal{background:rgba(200,90,0,0.07);border-color:rgba(200,90,0,0.2);color:var(--accent)}
+.skill-tag.purple{background:rgba(138,106,62,0.07);border-color:rgba(138,106,62,0.2);color:var(--accent2)}
+.skill-tag.coral{background:rgba(179,66,0,0.07);border-color:rgba(179,66,0,0.2);color:var(--accent3)}
+.skill-tag.gray{background:rgba(122,112,96,0.07);border-color:rgba(122,112,96,0.18);color:var(--muted)}
+.skill-dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
+
+/* DASHBOARD */
+.dash-wrap{background:var(--surface);border:0.5px solid var(--border2);border-radius:14px;padding:2rem;margin-bottom:1.5rem}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:2rem}
+.kpi{background:var(--surface2);border-radius:10px;padding:1.25rem 1rem;display:flex;flex-direction:column;gap:4px}
+.kpi-label{font-size:10px;letter-spacing:0.1em;color:var(--muted);text-transform:uppercase;font-family:'DM Mono',monospace}
+.kpi-val{font-size:1.75rem;font-weight:700;font-family:'Syne',sans-serif}
+.kpi-sub{font-size:11px;color:var(--muted)}
+.chart-title{font-size:10px;letter-spacing:0.12em;color:var(--muted);text-transform:uppercase;font-family:'DM Mono',monospace;margin-bottom:1rem}
+.charts-bottom{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1.5rem}
+.chart-card{background:var(--surface2);border-radius:10px;padding:1.25rem}
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px;font-size:12px;color:var(--muted)}
+.legend span{display:flex;align-items:center;gap:5px}
+.legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+
+/* FUNNEL STEPS */
+.funnel-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border-radius:12px;overflow:hidden;margin-bottom:1.5rem}
+.funnel-step{background:var(--surface);padding:1.5rem 1rem;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+.funnel-step.warn{background:var(--surface2)}
+.funnel-bar{width:100%;height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:4px}
+.funnel-fill{height:100%;border-radius:2px}
+.funnel-num{font-family:'Syne',sans-serif;font-size:1.9rem;font-weight:800}
+.funnel-label{font-size:12px;color:var(--muted);letter-spacing:0.02em}
+.funnel-drop{font-family:'DM Mono',monospace;font-size:10px}
+
+/* SOURCE + AB */
+.source-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1.5rem}
+.source-card{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:1.25rem}
+.source-card.top{border-color:var(--accent)}
+.source-name{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;color:var(--muted);text-transform:uppercase;margin-bottom:6px}
+.source-pct{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;margin-bottom:8px}
+.source-bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.source-fill{height:100%;border-radius:2px}
+.source-note{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5}
+
+.ab-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.5rem}
+.ab-card{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:1.5rem}
+.ab-card.winner{border-color:var(--accent);background:var(--surface2)}
+.ab-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;color:var(--muted);margin-bottom:6px}
+.ab-badge{font-family:'DM Mono',monospace;font-size:10px;padding:2px 10px;background:var(--accent-dim);color:var(--accent);border-radius:4px;display:inline-block;margin-bottom:1rem;border:0.5px solid rgba(93,202,165,0.25)}
+.ab-num{font-family:'Syne',sans-serif;font-size:2.4rem;font-weight:800;margin-bottom:4px}
+.ab-desc{font-size:13px;color:var(--muted);line-height:1.6}
+
+/* RECS */
+.rec-list{display:flex;flex-direction:column;gap:12px}
+.rec-item{display:flex;gap:18px;align-items:flex-start;background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:1.25rem 1.5rem;transition:border-color 0.2s}
+.rec-item:hover{border-color:var(--border2)}
+.rec-num{font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);min-width:22px;padding-top:2px}
+.rec-title{font-size:14px;font-weight:500;margin-bottom:5px}
+.rec-body{font-size:13px;color:var(--muted);line-height:1.65}
+
+/* REPO TREE */
+.repo-tree{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:1.5rem;font-family:'DM Mono',monospace;font-size:13px;line-height:2.2}
+.tree-root{color:var(--accent2)}
+.tree-folder{color:var(--accent)}
+.tree-file{color:var(--muted)}
+.tree-i1{padding-left:1.4rem}
+.tree-i2{padding-left:2.8rem}
+
+/* TAKEAWAY */
+.takeaway{background:var(--surface2);border:0.5px solid var(--border2);border-radius:14px;padding:3rem;text-align:center}
+.takeaway-quote{font-family:'Syne',sans-serif;font-size:clamp(1.2rem,2.5vw,1.6rem);font-weight:700;line-height:1.4;margin-bottom:1rem}
+.takeaway-quote em{color:var(--accent);font-style:normal}
+.takeaway-sub{font-size:13px;color:var(--muted)}
+
+footer{border-top:0.5px solid var(--border);padding:2rem 3rem;display:flex;justify-content:space-between;align-items:center;max-width:960px;margin:0 auto;font-size:12px;color:var(--muted);font-family:'DM Mono',monospace}
+footer a{color:var(--accent);text-decoration:none}
+
+@media(max-width:680px){
+  nav{padding:1rem 1.5rem}
+  .nav-links{display:none}
+  .hero,section{padding-left:1.5rem;padding-right:1.5rem}
+  .hero{padding-top:110px}
+  .kpi-row{grid-template-columns:1fr 1fr}
+  .funnel-grid{grid-template-columns:1fr 1fr}
+  .source-grid,.ab-grid,.charts-bottom{grid-template-columns:1fr}
+  h1{font-size:2.2rem}
+  footer{flex-direction:column;gap:8px;text-align:center}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="#">vishnu.c / user-funnel-analysis</a>
+  <ul class="nav-links">
+    <li><a href="#skills">Skills</a></li>
+    <li><a href="#funnel">Funnel</a></li>
+    <li><a href="#dashboard">Dashboard</a></li>
+    <li><a href="#recs">Recommendations</a></li>
+  </ul>
+  <a href="https://versuse.github.io" class="nav-cta" target="_blank">Portfolio ↗</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-tag">Product analytics · case study</div>
+  <h1>70% of users open<br>the app and <em>never buy.</em></h1>
+  <p class="hero-sub">A funnel analysis across 1,000 users to find exactly where activation breaks — and what interventions actually move the needle.</p>
+  <div class="hero-meta">
+    <div class="meta-item">
+      <span class="meta-label">Dataset</span>
+      <span class="meta-value">1,000 simulated users</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Events tracked</span>
+      <span class="meta-value">Signup → Repeat Order</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Tools used</span>
+      <span class="meta-value">SQL · Power BI · Python</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Analysis type</span>
+      <span class="meta-value">Funnel + Cohort + A/B</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Year</span>
+      <span class="meta-value">2026</span>
+    </div>
+  </div>
+</div>
+
+<!-- SKILLS -->
+<section id="skills">
+  <div class="sec-label">00 — Skills demonstrated</div>
+  <div class="skills-section">
+    <div>
+      <div class="skill-group-label">Analysis techniques</div>
+      <div class="skills-wrap">
+        <span class="skill-tag teal"><span class="skill-dot"></span>Funnel Analysis</span>
+        <span class="skill-tag teal"><span class="skill-dot"></span>Cohort Analysis</span>
+        <span class="skill-tag teal"><span class="skill-dot"></span>A/B Testing</span>
+        <span class="skill-tag teal"><span class="skill-dot"></span>Conversion Rate Optimisation</span>
+        <span class="skill-tag teal"><span class="skill-dot"></span>Drop-off Analysis</span>
+        <span class="skill-tag teal"><span class="skill-dot"></span>Retention Analysis</span>
+        <span class="skill-tag teal"><span class="skill-dot"></span>User Segmentation</span>
+      </div>
+    </div>
+    <div>
+      <div class="skill-group-label">Tools & technologies</div>
+      <div class="skills-wrap">
+        <span class="skill-tag purple"><span class="skill-dot"></span>SQL</span>
+        <span class="skill-tag purple"><span class="skill-dot"></span>Power BI</span>
+        <span class="skill-tag purple"><span class="skill-dot"></span>Python</span>
+        <span class="skill-tag purple"><span class="skill-dot"></span>Pandas</span>
+        <span class="skill-tag purple"><span class="skill-dot"></span>CSV / Event Data</span>
+        <span class="skill-tag purple"><span class="skill-dot"></span>DAX (Power BI)</span>
+      </div>
+    </div>
+    <div>
+      <div class="skill-group-label">Product thinking</div>
+      <div class="skills-wrap">
+        <span class="skill-tag coral"><span class="skill-dot"></span>Activation Metrics</span>
+        <span class="skill-tag coral"><span class="skill-dot"></span>North Star Metric Definition</span>
+        <span class="skill-tag coral"><span class="skill-dot"></span>Experiment Design</span>
+        <span class="skill-tag coral"><span class="skill-dot"></span>Growth Levers</span>
+        <span class="skill-tag coral"><span class="skill-dot"></span>Acquisition Channel Analysis</span>
+        <span class="skill-tag coral"><span class="skill-dot"></span>Product Recommendations</span>
+      </div>
+    </div>
+    <div>
+      <div class="skill-group-label">Concepts</div>
+      <div class="skills-wrap">
+        <span class="skill-tag gray"><span class="skill-dot"></span>AARRR Framework</span>
+        <span class="skill-tag gray"><span class="skill-dot"></span>Statistical Significance</span>
+        <span class="skill-tag gray"><span class="skill-dot"></span>CAC vs LTV</span>
+        <span class="skill-tag gray"><span class="skill-dot"></span>Event-based Tracking</span>
+        <span class="skill-tag gray"><span class="skill-dot"></span>Data Storytelling</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FUNNEL -->
+<section id="funnel">
+  <div class="sec-label">01 — Funnel analysis</div>
+
+  <div class="funnel-grid">
+    <div class="funnel-step">
+      <div class="funnel-bar"><div class="funnel-fill" style="width:100%;background:var(--accent2)"></div></div>
+      <div class="funnel-num" style="color:#8A6A3E">1,000</div>
+      <div class="funnel-label">Signup</div>
+      <div class="funnel-drop" style="color:var(--muted)">baseline</div>
+    </div>
+    <div class="funnel-step">
+      <div class="funnel-bar"><div class="funnel-fill" style="width:80%;background:var(--accent)"></div></div>
+      <div class="funnel-num" style="color:var(--accent)">801</div>
+      <div class="funnel-label">App Open</div>
+      <div class="funnel-drop" style="color:var(--muted)">−19.9%</div>
+    </div>
+    <div class="funnel-step warn">
+      <div class="funnel-bar"><div class="funnel-fill" style="width:30%;background:var(--accent3)"></div></div>
+      <div class="funnel-num" style="color:var(--accent3)">304</div>
+      <div class="funnel-label">First Order</div>
+      <div class="funnel-drop" style="color:var(--accent3);font-weight:600">−62% ⚠</div>
+    </div>
+    <div class="funnel-step">
+      <div class="funnel-bar"><div class="funnel-fill" style="width:12%;background:var(--muted)"></div></div>
+      <div class="funnel-num" style="color:var(--muted)">119</div>
+      <div class="funnel-label">Repeat Order</div>
+      <div class="funnel-drop" style="color:var(--muted)">−60.9%</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>The real failure point is App Open → First Order.</strong> These 801 users opened the app — they had intent. Losing 62% of them before a purchase is a product and UX problem, not an acquisition problem.
+  </div>
+  <div class="callout good">
+    The Signup → App Open drop (20%) is within normal range. Some signups are casual, some lose interest. Don't optimise there first.
+  </div>
+
+  <div style="margin-top:2.5rem">
+    <div class="sec-label">Acquisition source breakdown</div>
+    <div class="source-grid">
+      <div class="source-card top">
+        <div class="source-name">Ads</div>
+        <div class="source-pct" style="color:var(--accent)">33.66%</div>
+        <div class="source-bar"><div class="source-fill" style="width:84%;background:var(--accent)"></div></div>
+        <div class="source-note">Highest conversion. Strong targeting or higher purchase intent on arrival.</div>
+      </div>
+      <div class="source-card">
+        <div class="source-name">Referral</div>
+        <div class="source-pct" style="color:var(--accent2)">30.48%</div>
+        <div class="source-bar"><div class="source-fill" style="width:76%;background:var(--accent2)"></div></div>
+        <div class="source-note">Close to Ads at likely lower CAC. Referral users bring trust, need less convincing.</div>
+      </div>
+      <div class="source-card">
+        <div class="source-name">Organic</div>
+        <div class="source-pct" style="color:var(--muted)">28.37%</div>
+        <div class="source-bar"><div class="source-fill" style="width:71%;background:var(--muted)"></div></div>
+        <div class="source-note">Lowest. No social proof or direct incentive — needs more from the product experience.</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:2.5rem">
+    <div class="sec-label">A/B test — first-order incentive</div>
+    <div class="ab-grid">
+      <div class="ab-card">
+        <div class="ab-label">Group A — Control</div>
+        <div class="ab-num" style="color:var(--muted)">~28.6%</div>
+        <div class="ab-desc">No incentive. Standard onboarding. Baseline conversion rate.</div>
+      </div>
+      <div class="ab-card winner">
+        <div class="ab-label">Group B — Incentive</div>
+        <div class="ab-badge">winner</div>
+        <div class="ab-num" style="color:var(--accent)">~32.1%</div>
+        <div class="ab-desc">First-order discount shown at activation. +3–5% uplift observed over control.</div>
+      </div>
+    </div>
+    <div class="callout info">
+      The uplift is directionally strong but at ~500 users per group, it's right on the edge of statistical significance. Before scaling, track whether incentivised users also <strong>return for repeat orders</strong> — or if you're just pulling forward purchases that would've happened anyway.
+    </div>
+  </div>
+</section>
+
+<!-- DASHBOARD -->
+<section id="dashboard">
+  <div class="sec-label">02 — Dashboard</div>
+
+  <div class="dash-wrap">
+    <div class="kpi-row">
+      <div class="kpi">
+        <span class="kpi-label">Total users</span>
+        <span class="kpi-val" style="color:#8A6A3E">1,000</span>
+        <span class="kpi-sub">Signed up</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">Conversion rate</span>
+        <span class="kpi-val" style="color:var(--accent)">30.4%</span>
+        <span class="kpi-sub">Signup → First Order</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">Largest drop</span>
+        <span class="kpi-val" style="color:var(--accent3)">−62%</span>
+        <span class="kpi-sub">App Open → First Order</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">Repeat rate</span>
+        <span class="kpi-val" style="color:var(--muted)">39.1%</span>
+        <span class="kpi-sub">Of first-order users</span>
+      </div>
+    </div>
+
+    <div class="chart-title">User funnel drop-off</div>
+    <div style="position:relative;width:100%;height:210px">
+      <canvas id="funnelChart" role="img" aria-label="Horizontal bar chart: Signup 1000, App Open 801, First Order 304, Repeat Order 119">Signup 1000, App Open 801, First Order 304, Repeat Order 119.</canvas>
+    </div>
+
+    <div class="charts-bottom">
+      <div class="chart-card">
+        <div class="chart-title">Conversion by source</div>
+        <div class="legend">
+          <span><span class="legend-dot" style="background:#C85A00"></span>Ads 33.66%</span>
+          <span><span class="legend-dot" style="background:#8A6A3E"></span>Referral 30.48%</span>
+          <span><span class="legend-dot" style="background:#C4BAA8"></span>Organic 28.37%</span>
+        </div>
+        <div style="position:relative;width:100%;height:170px">
+          <canvas id="sourceChart" role="img" aria-label="Bar chart conversion by source: Ads 33.66%, Referral 30.48%, Organic 28.37%">Ads 33.66%, Referral 30.48%, Organic 28.37%.</canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">A/B test impact</div>
+        <div class="legend">
+          <span><span class="legend-dot" style="background:#C85A00"></span>Group B (incentive)</span>
+          <span><span class="legend-dot" style="background:#C4BAA8"></span>Group A (control)</span>
+        </div>
+        <div style="position:relative;width:100%;height:170px">
+          <canvas id="abChart" role="img" aria-label="Bar chart A/B test: Group B 32.1%, Group A 28.6%">Group B 32.1%, Group A 28.6%.</canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- REPO -->
+<section>
+  <div class="sec-label">03 — Repo structure</div>
+  <div class="repo-tree">
+    <div class="tree-root">user-funnel-analysis/</div>
+    <div class="tree-i1"><span class="tree-folder">├── data/</span></div>
+    <div class="tree-i2"><span class="tree-file">├── users.csv</span></div>
+    <div class="tree-i2"><span class="tree-file">└── events.csv</span></div>
+    <div class="tree-i1"><span class="tree-folder">├── sql/</span></div>
+    <div class="tree-i2"><span class="tree-file">└── queries.sql</span></div>
+    <div class="tree-i1"><span class="tree-folder">├── outputs/</span></div>
+    <div class="tree-i2"><span class="tree-file">└── screenshots/</span></div>
+    <div class="tree-i1"><span class="tree-file">├── index.html</span></div>
+    <div class="tree-i1"><span class="tree-file">└── README.md</span></div>
+  </div>
+</section>
+
+<!-- RECS -->
+<section id="recs">
+  <div class="sec-label">04 — Recommendations</div>
+  <div class="rec-list">
+    <div class="rec-item">
+      <div class="rec-num">01</div>
+      <div>
+        <div class="rec-title">Fix the App Open → First Order experience first.</div>
+        <div class="rec-body">Before adding incentives or changing acquisition spend, understand why engaged users aren't converting. Is there a clear first action after onboarding? Is the path to purchase obvious? This is a UX problem before it's a marketing problem.</div>
+      </div>
+    </div>
+    <div class="rec-item">
+      <div class="rec-num">02</div>
+      <div>
+        <div class="rec-title">Time-triggered nudges at the 48-hour mark.</div>
+        <div class="rec-body">Users who open the app but don't order within 48–72 hours almost never will. Trigger a push notification or email at that exact window — not a generic message, but a direct path to the most popular item or a limited-time offer tied to their browse history.</div>
+      </div>
+    </div>
+    <div class="rec-item">
+      <div class="rec-num">03</div>
+      <div>
+        <div class="rec-title">Scale the incentive — but measure retention, not just conversion.</div>
+        <div class="rec-body">Group B's uplift is real enough to test at scale. Track whether incentivised first-order users return at the same rate as organic converters. If retention drops, you're buying activations, not building users.</div>
+      </div>
+    </div>
+    <div class="rec-item">
+      <div class="rec-num">04</div>
+      <div>
+        <div class="rec-title">Invest in Referral before scaling Ads.</div>
+        <div class="rec-body">If live data confirms Referral conversion is close to Ads at lower CAC, that's where growth spend should shift. Referral programs compound. Ad spend doesn't.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TAKEAWAY -->
+<section>
+  <div class="takeaway">
+    <div class="takeaway-quote">Users are willing to open the app.<br><em>The product isn't giving them a reason to buy.</em></div>
+    <div class="takeaway-sub">Fix that window, and the rest of the funnel follows.</div>
+  </div>
+</section>
+
+<footer>
+  <span>vishnu c · 2026</span>
+  <a href="https://versuse.github.io" target="_blank">versuse.github.io ↗</a>
+</footer>
+
+<script>
+const gc='rgba(0,0,0,0.06)';
+const tc='#888880';
+const tt={backgroundColor:'#1a1a24',titleColor:'#f0efe8',bodyColor:'#888880',borderColor:'rgba(255,255,255,0.1)',borderWidth:0.5};
+
+new Chart(document.getElementById('funnelChart'),{
+  type:'bar',
+  data:{
+    labels:['Signup','App Open','First Order','Repeat Order'],
+    datasets:[{
+      data:[1000,801,304,119],
+      backgroundColor:['#8A6A3E','#C85A00','#B34200','#C4BAA8'],
+      borderRadius:6,borderSkipped:false
+    }]
+  },
+  options:{
+    indexAxis:'y',responsive:true,maintainAspectRatio:false,
+    plugins:{
+      legend:{display:false},
+      tooltip:{callbacks:{label:ctx=>{const p=((ctx.raw/1000)*100).toFixed(1);return ` ${ctx.raw.toLocaleString()} users (${p}% of total)`}},...tt}
+    },
+    scales:{
+      x:{grid:{color:gc},ticks:{color:tc,font:{size:11},callback:v=>v.toLocaleString()},border:{display:false}},
+      y:{grid:{display:false},ticks:{color:'#f0efe8',font:{size:12}},border:{display:false}}
+    }
+  }
+});
+
+new Chart(document.getElementById('sourceChart'),{
+  type:'bar',
+  data:{
+    labels:['Ads','Referral','Organic'],
+    datasets:[{data:[33.66,30.48,28.37],backgroundColor:['#C85A00','#8A6A3E','#C4BAA8'],borderRadius:6,borderSkipped:false}]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.raw.toFixed(2)}%`},...tt}},
+    scales:{
+      x:{grid:{display:false},ticks:{color:'#f0efe8',font:{size:12}},border:{display:false}},
+      y:{min:0,max:40,grid:{color:gc},ticks:{color:tc,font:{size:11},callback:v=>v+'%'},border:{display:false}}
+    }
+  }
+});
+
+new Chart(document.getElementById('abChart'),{
+  type:'bar',
+  data:{
+    labels:['Group B','Group A'],
+    datasets:[{data:[32.1,28.6],backgroundColor:['#C85A00','#C4BAA8'],borderRadius:6,borderSkipped:false}]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.raw.toFixed(1)}%`},...tt}},
+    scales:{
+      x:{grid:{display:false},ticks:{color:'#f0efe8',font:{size:12}},border:{display:false}},
+      y:{min:0,max:40,grid:{color:gc},ticks:{color:tc,font:{size:11},callback:v=>v+'%'},border:{display:false}}
+    }
+  }
+});
+</script>
+</body>
+</html>
